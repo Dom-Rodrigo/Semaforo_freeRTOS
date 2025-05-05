@@ -16,9 +16,9 @@ void vBlinkTask()
     while (true)
     {
         gpio_put(led_pin_green, true);
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        vTaskDelay(pdMS_TO_TICKS(20000));
         gpio_put(led_pin_green, false);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(10000));
         printf("Blink\n");
     }
 }
@@ -28,9 +28,9 @@ void vBlinkTask2()
 
     while (true)
     {
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(10000));
         gpio_put(led_pin_red, true);
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        vTaskDelay(pdMS_TO_TICKS(20000));
         gpio_put(led_pin_red, false);
         printf("Blink\n");
     }
@@ -38,23 +38,37 @@ void vBlinkTask2()
 
 void vBeepVerde(){
     while (true){
+        vTaskDelay(pdMS_TO_TICKS(2000));
         pwm_set_gpio_level(BUZZER_A, 2048);
-        vTaskDelay(pdMS_TO_TICKS(200));
+        vTaskDelay(pdMS_TO_TICKS(2000));
         pwm_set_gpio_level(BUZZER_A, 0); 
-        vTaskDelay(pdMS_TO_TICKS(2800));
+        vTaskDelay(pdMS_TO_TICKS(26000));
     }
 }
 
 void vBeepAmarelo(){
     while (true){
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(10000));
         pwm_set_gpio_level(BUZZER_B, 2048);
-        vTaskDelay(pdMS_TO_TICKS(200));
+        vTaskDelay(pdMS_TO_TICKS(2000));
         pwm_set_gpio_level(BUZZER_B, 0); 
         pwm_set_gpio_level(BUZZER_B, 2048);
-        vTaskDelay(pdMS_TO_TICKS(200));
+        vTaskDelay(pdMS_TO_TICKS(2000));
         pwm_set_gpio_level(BUZZER_B, 0); 
-        vTaskDelay(pdMS_TO_TICKS(1600));
+        vTaskDelay(pdMS_TO_TICKS(16000));
+    }
+}
+
+void vBeepVermelho(){
+    while (true){
+        vTaskDelay(pdMS_TO_TICKS(20000));
+        pwm_set_gpio_level(BUZZER_A, 2048);
+        vTaskDelay(pdMS_TO_TICKS(2000));
+        pwm_set_gpio_level(BUZZER_A, 0); 
+        pwm_set_gpio_level(BUZZER_A, 2048);
+        vTaskDelay(pdMS_TO_TICKS(2000));
+        pwm_set_gpio_level(BUZZER_B, 0); 
+        vTaskDelay(pdMS_TO_TICKS(6000));
     }
 }
 
@@ -116,6 +130,8 @@ int main()
     xTaskCreate(vBeepVerde, "Tareda do Beep do farol verde", 
         configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
     xTaskCreate(vBeepAmarelo, "Tareda do Beep do farol amarelo", 
+        configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
+    xTaskCreate(vBeepVermelho, "Tareda do Beep do farol vermelho", 
         configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
     vTaskStartScheduler();
     panic_unsupported();
