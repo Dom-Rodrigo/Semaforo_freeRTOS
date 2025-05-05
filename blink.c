@@ -48,10 +48,13 @@ void vBeepVerde(){
 void vBeepAmarelo(){
     while (true){
         vTaskDelay(pdMS_TO_TICKS(1000));
-        pwm_set_gpio_level(BUZZER_A, 2048);
+        pwm_set_gpio_level(BUZZER_B, 2048);
         vTaskDelay(pdMS_TO_TICKS(200));
-        pwm_set_gpio_level(BUZZER_A, 0); 
-        vTaskDelay(pdMS_TO_TICKS(1800));
+        pwm_set_gpio_level(BUZZER_B, 0); 
+        pwm_set_gpio_level(BUZZER_B, 2048);
+        vTaskDelay(pdMS_TO_TICKS(200));
+        pwm_set_gpio_level(BUZZER_B, 0); 
+        vTaskDelay(pdMS_TO_TICKS(1600));
     }
 }
 
@@ -104,7 +107,7 @@ int main()
 
     gpio_init(BUZZER_B);
     gpio_set_dir(BUZZER_B, GPIO_OUT);
-    pwm_init_buzzer(BUZZER_B, 100);
+    pwm_init_buzzer(BUZZER_B, 150);
 
     xTaskCreate(vBlinkTask, "Tarefa do LED VERDE", 
         configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
