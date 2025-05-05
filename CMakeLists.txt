@@ -38,6 +38,7 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} 
         pico_stdlib
         pico_bootrom
+        hardware_pwm
         FreeRTOS-Kernel         # Kernel do FreeRTOS
         FreeRTOS-Kernel-Heap4   # Gerenciador de memoria
         )
