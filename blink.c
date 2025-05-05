@@ -19,7 +19,7 @@ TaskHandle_t xBlinkTask2 = NULL;
 TaskHandle_t xBeepVerde = NULL;
 TaskHandle_t xBeepAmarelo = NULL;
 TaskHandle_t xBeepVermelho = NULL;
-TaskHandle_t xModoNortuno = NULL;
+TaskHandle_t xModoNoturno = NULL;
 
 void vBlinkTask()
 {
@@ -47,18 +47,17 @@ void vBlinkTask2()
 void vBeepVerde(){
     while (true){
         vTaskDelay(pdMS_TO_TICKS(2000));
-        uint slice_num_a = pwm_gpio_to_slice_num(BUZZER_A);
+        pwm_set_gpio_level(BUZZER_B, 0); 
         pwm_set_gpio_level(BUZZER_A, 2048);
         vTaskDelay(pdMS_TO_TICKS(2000));
         pwm_set_gpio_level(BUZZER_A, 0); 
-        pwm_set_enabled(slice_num_a, false);
         vTaskDelay(pdMS_TO_TICKS(26000));
     }
 }
 
 void vBeepAmarelo(){
     while (true){
-        uint slice_num_b = pwm_gpio_to_slice_num(BUZZER_B);
+        pwm_set_gpio_level(BUZZER_B, 0); 
         vTaskDelay(pdMS_TO_TICKS(10000));
         pwm_set_gpio_level(BUZZER_B, 2048);
         vTaskDelay(pdMS_TO_TICKS(2000));
@@ -66,14 +65,14 @@ void vBeepAmarelo(){
         pwm_set_gpio_level(BUZZER_B, 2048);
         vTaskDelay(pdMS_TO_TICKS(2000));
         pwm_set_gpio_level(BUZZER_B, 0); 
-        pwm_set_enabled(slice_num_b, false);
         vTaskDelay(pdMS_TO_TICKS(16000));
     }
 }
 
 void vBeepVermelho(){
     while (true){
-        uint slice_num_a = pwm_gpio_to_slice_num(BUZZER_A);
+
+        pwm_set_gpio_level(BUZZER_B, 0); 
         vTaskDelay(pdMS_TO_TICKS(20000));
         pwm_set_gpio_level(BUZZER_A, 2048);
         vTaskDelay(pdMS_TO_TICKS(2000));
@@ -81,7 +80,6 @@ void vBeepVermelho(){
         pwm_set_gpio_level(BUZZER_A, 2048);
         vTaskDelay(pdMS_TO_TICKS(2000));
         pwm_set_gpio_level(BUZZER_B, 0); 
-        pwm_set_enabled(slice_num_a, false);
         vTaskDelay(pdMS_TO_TICKS(6000));
     }
 }
@@ -107,12 +105,15 @@ void vModoNoturno(){
         // vTaskDelay(pdMS_TO_TICKS(2000));
         // gpio_put(led_pin_green, true);
         // gpio_put(led_pin_red, true);
+        vTaskSuspend(NULL);
+
     }
 }
 
 // Trecho para modo BOOTSEL com botão B e alter flag do modo com botão A
 volatile uint32_t last_time;
 bool modo_noturno = false;
+volatile bool a_pressionado = false;
 void gpio_irq_handler(uint gpio, uint32_t events)
 {
     uint32_t current_time = to_us_since_boot(get_absolute_time());
@@ -121,37 +122,36 @@ void gpio_irq_handler(uint gpio, uint32_t events)
             last_time = current_time;
             rom_reset_usb_boot(0, 0);
         }
+        if (!gpio_get(botaoA)) {
+            a_pressionado = true;
+            last_time = current_time;
+        }
+
     }   
 }
 
 // Interrupção como tarefa
 void vInterrupcaoBotao(void *pvParameters) {
-    bool last_state = true;
-
     while (true) {
-        bool current_state = gpio_get(botaoA);
-
-        // Deteca que o botao foi pressionado, falling_edge
-        if (last_state && !current_state) {
-            vTaskDelay(pdMS_TO_TICKS(50));  // Debounce
-            if (!gpio_get(botaoA)) {
-                if (!modo_noturno) {
-                    modo_noturno = true;
-                    vTaskResume(xModoNortuno);
-                } else {
-                    // Sai do modo noturno e resume as tarefas
-                    modo_noturno = false;
-                    vTaskResume(xBlinkTask);
-                    vTaskResume(xBlinkTask2);
-                    vTaskResume(xBeepVerde);
-                    vTaskResume(xBeepAmarelo);
-                    vTaskResume(xBeepVermelho);
-                }
+        if (a_pressionado) {
+            a_pressionado = false;
+            modo_noturno = !modo_noturno;
+            if (modo_noturno) {
+                vTaskResume(xModoNoturno);
+            } else {
+                vTaskResume(xBlinkTask);
+                vTaskResume(xBlinkTask2);
+                vTaskResume(xBeepVerde);
+                vTaskResume(xBeepAmarelo);
+                vTaskResume(xBeepVermelho);
+                uint slice_num_a = pwm_gpio_to_slice_num(BUZZER_A);
+                uint slice_num_b = pwm_gpio_to_slice_num(BUZZER_B);
+                // pwm_set_enabled(slice_num_a, true);
+                // pwm_set_enabled(slice_num_b, true);
             }
         }
 
-        last_state = current_state;
-        vTaskDelay(pdMS_TO_TICKS(10));  // Intervalo de polling
+        vTaskDelay(pdMS_TO_TICKS(10)); 
     }
 }
 
@@ -213,11 +213,11 @@ int main()
     xTaskCreate(vBeepAmarelo, "Tarefa do Beep do farol amarelo", 
         configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, &xBeepAmarelo);
     xTaskCreate(vBeepVermelho, "Tarefa do Beep do farol vermelho", 
-        configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, &xBeepVerde);
+        configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, &xBeepVermelho);
     xTaskCreate(vModoNoturno, "Tarefa do Modo Noturno",
-        configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, &xModoNortuno);
+        configMINIMAL_STACK_SIZE, NULL, 2, &xModoNoturno);
     xTaskCreate(vInterrupcaoBotao, "Tarefa do Modo Noturno",
-        configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
+        configMINIMAL_STACK_SIZE, NULL, 3, NULL);
     vTaskStartScheduler();
     panic_unsupported();
 }
