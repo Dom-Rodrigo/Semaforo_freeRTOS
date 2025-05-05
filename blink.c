@@ -164,6 +164,7 @@ TaskHandle_t xBeepVerde = NULL;
 TaskHandle_t xBeepAmarelo = NULL;
 TaskHandle_t xBeepVermelho = NULL;
 TaskHandle_t xModoNoturno = NULL;
+TaskHandle_t xMatrizTask = NULL;
 
 // volatile int numero = 0;
 // void vTimerMatriz(){
@@ -174,17 +175,15 @@ TaskHandle_t xModoNoturno = NULL;
 //     vTaskDelay(1000);
 // }
 
-void vTimerMatriz(){
-    desenha_numeros(1, 50, 0, 0);
-    vTaskDelay(pdMS_TO_TICKS(1000));
 
-}
+
 void vBlinkTask()
 {
     while (true)
     {
         gpio_put(led_pin_green, true);
         vTaskDelay(pdMS_TO_TICKS(20000));
+
         gpio_put(led_pin_green, false);
         vTaskDelay(pdMS_TO_TICKS(10000));
     }
@@ -192,13 +191,14 @@ void vBlinkTask()
 
 void vBlinkTask2()
 {
-
     while (true)
     {
         vTaskDelay(pdMS_TO_TICKS(10000));
         gpio_put(led_pin_red, true);
         vTaskDelay(pdMS_TO_TICKS(20000));
         gpio_put(led_pin_red, false);
+
+
     }
 }
 void vBeepVerde(){
@@ -249,25 +249,21 @@ void vBeepVermelho(){
 void vMatrizTask()
 {
     int contador = 0;
-    int color = 0;
     bool cor = true;
     while (true)
     {
                     
         if (contador > 9){
             contador = 0;
-            color++;
         }
-        if (color > 2){
-            color=0;
-        }
-        if (color == 0){
+
+        if (!gpio_get(led_pin_red) && gpio_get(led_pin_green)){
             desenha_numeros(contador, 0, 50, 0);
         }
-        if (color == 1){
+        if (gpio_get(led_pin_red) && gpio_get(led_pin_green)){
             desenha_numeros(contador, 50, 50, 0);
         }
-        if (color == 2){
+        if (gpio_get(led_pin_red) && !gpio_get(led_pin_green)){
             desenha_numeros(contador, 50, 0, 0);
         }
         contador++; // Incrementa o contador
@@ -292,6 +288,8 @@ void vModoNoturno(){
         vTaskSuspend(xBeepVerde);
         vTaskSuspend(xBeepAmarelo);
         vTaskSuspend(xBeepVermelho);
+        vTaskSuspend(xMatrizTask);
+
 
         // vTaskDelay(pdMS_TO_TICKS(2000));
         // gpio_put(led_pin_green, true);
@@ -336,6 +334,7 @@ void vInterrupcaoBotao(void *pvParameters) {
                 vTaskResume(xBeepVerde);
                 vTaskResume(xBeepAmarelo);
                 vTaskResume(xBeepVermelho);
+                vTaskResume(xMatrizTask);
                 // gpio_put(led_pin_green, false);
                 // gpio_put(led_pin_red, false);
                 // uint slice_num_a = pwm_gpio_to_slice_num(BUZZER_A);
@@ -415,14 +414,11 @@ int main()
     xTaskCreate(vBeepVermelho, "Tarefa do Beep do farol vermelho", 
         configMINIMAL_STACK_SIZE, NULL, 3, &xBeepVermelho);
     xTaskCreate(vMatrizTask, "Tarefa do Beep do farol vermelho", 
-        configMINIMAL_STACK_SIZE, NULL, 3, &xBeepVermelho);
-    // xTaskCreate(vTimerMatriz, "Tarefa da Matriz", configMINIMAL_STACK_SIZE, NULL, 0, NULL);
-    // xTaskCreate(vTimerMatriz, "Tarefa do Timer com a Matriz", 
-    //     configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
-    // xTaskCreate(vModoNoturno, "Tarefa do Modo Noturno",
-    //     configMINIMAL_STACK_SIZE, NULL, 2, &xModoNoturno);
-    // xTaskCreate(vInterrupcaoBotao, "Tarefa do Modo Noturno",
-    //     configMINIMAL_STACK_SIZE, NULL, 3, NULL);
+        configMINIMAL_STACK_SIZE, NULL, 3, &xMatrizTask);
+    xTaskCreate(vModoNoturno, "Tarefa do Modo Noturno",
+        configMINIMAL_STACK_SIZE, NULL, 4, &xModoNoturno);
+    xTaskCreate(vInterrupcaoBotao, "Tarefa do Modo Noturno",
+        configMINIMAL_STACK_SIZE, NULL, 5, NULL);
     vTaskStartScheduler();
     panic_unsupported();
 }
