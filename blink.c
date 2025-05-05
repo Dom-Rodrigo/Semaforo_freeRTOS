@@ -165,6 +165,10 @@ TaskHandle_t xBeepAmarelo = NULL;
 TaskHandle_t xBeepVermelho = NULL;
 TaskHandle_t xModoNoturno = NULL;
 TaskHandle_t xMatrizTask = NULL;
+TaskHandle_t xBeepNoturno = NULL;
+
+static bool modo_noturno = false;
+
 
 // volatile int numero = 0;
 // void vTimerMatriz(){
@@ -203,47 +207,74 @@ void vBlinkTask2()
 }
 void vBeepVerde(){
     uint slice_num_a = pwm_gpio_to_slice_num(BUZZER_A);
+    pwm_set_clkdiv(slice_num_a, 100.0); // Som grave
     while (true){
         vTaskDelay(pdMS_TO_TICKS(2000));
-            pwm_set_gpio_level(BUZZER_A, 0); 
-            pwm_set_gpio_level(BUZZER_A, 2048);
-            vTaskDelay(pdMS_TO_TICKS(2000));
-            pwm_set_gpio_level(BUZZER_A, 0); 
-            vTaskDelay(pdMS_TO_TICKS(26000));
+        pwm_set_gpio_level(BUZZER_A, 2048);
+        vTaskDelay(pdMS_TO_TICKS(2000));
+        pwm_set_gpio_level(BUZZER_A, 0); 
+        vTaskDelay(pdMS_TO_TICKS(26000));
     }
 }
 
 void vBeepAmarelo(){
     uint slice_num_b = pwm_gpio_to_slice_num(BUZZER_B);
+    pwm_set_clkdiv(slice_num_b, 70.0); // Som médio
     while (true){
-            pwm_set_gpio_level(BUZZER_B, 0); 
-            vTaskDelay(pdMS_TO_TICKS(10000));
-            pwm_set_gpio_level(BUZZER_B, 2048);
-            vTaskDelay(pdMS_TO_TICKS(2000));
-            pwm_set_gpio_level(BUZZER_B, 0); 
-            pwm_set_gpio_level(BUZZER_B, 2048);
-            vTaskDelay(pdMS_TO_TICKS(2000));
-            pwm_set_gpio_level(BUZZER_B, 0); 
-            vTaskDelay(pdMS_TO_TICKS(16000));
+        pwm_set_gpio_level(BUZZER_B, 0); 
+        vTaskDelay(pdMS_TO_TICKS(10000));
 
-        }
+        pwm_set_gpio_level(BUZZER_B, 2048);
+        vTaskDelay(pdMS_TO_TICKS(2000));
+        pwm_set_gpio_level(BUZZER_B, 0); 
+
+        pwm_set_gpio_level(BUZZER_B, 2048);
+        vTaskDelay(pdMS_TO_TICKS(2000));
+        pwm_set_gpio_level(BUZZER_B, 0); 
+
+        vTaskDelay(pdMS_TO_TICKS(16000));
+    }
 }
 
 void vBeepVermelho(){
     uint slice_num_a = pwm_gpio_to_slice_num(BUZZER_A);
+    pwm_set_clkdiv(slice_num_a, 40.0); // Som agudo
     while (true){
-            pwm_set_gpio_level(BUZZER_A, 0); 
-            vTaskDelay(pdMS_TO_TICKS(20000));
-            pwm_set_gpio_level(BUZZER_A, 2048);
-            vTaskDelay(pdMS_TO_TICKS(2000));
-            pwm_set_gpio_level(BUZZER_A, 0); 
-            pwm_set_gpio_level(BUZZER_A, 2048);
-            vTaskDelay(pdMS_TO_TICKS(2000));
-            pwm_set_gpio_level(BUZZER_A, 0); 
-            vTaskDelay(pdMS_TO_TICKS(6000));
+        pwm_set_gpio_level(BUZZER_A, 0); 
+        vTaskDelay(pdMS_TO_TICKS(20000));
+
+        pwm_set_gpio_level(BUZZER_A, 2048);
+        vTaskDelay(pdMS_TO_TICKS(200));
+        pwm_set_gpio_level(BUZZER_A, 0); 
+
+        pwm_set_gpio_level(BUZZER_A, 2048);
+        vTaskDelay(pdMS_TO_TICKS(200));
+        pwm_set_gpio_level(BUZZER_A, 0); 
+
+        pwm_set_gpio_level(BUZZER_A, 2048);
+        vTaskDelay(pdMS_TO_TICKS(200));
+        pwm_set_gpio_level(BUZZER_A, 0); 
+
+        pwm_set_gpio_level(BUZZER_A, 2048);
+        vTaskDelay(pdMS_TO_TICKS(200));
+        pwm_set_gpio_level(BUZZER_A, 0); 
+
+        vTaskDelay(pdMS_TO_TICKS(7200));
     }
 }
 
+
+void vBeepNoturno(){
+    uint slice_num_b = pwm_gpio_to_slice_num(BUZZER_B);
+    pwm_set_enabled(slice_num_b, true);
+    while (true){
+            pwm_set_gpio_level(BUZZER_B, 2048); 
+            vTaskDelay(pdMS_TO_TICKS(200));
+            pwm_set_gpio_level(BUZZER_B, 0); 
+            vTaskDelay(pdMS_TO_TICKS(2000));
+
+    }
+}
 static int contador = 0;
 void vMatrizTask()
 {
@@ -306,7 +337,6 @@ void vModoNoturno(){
 
 // Trecho para modo BOOTSEL com botão B e alter flag do modo com botão A
 volatile uint32_t last_time;
-bool modo_noturno = false;
 volatile bool a_pressionado = false;
 void gpio_irq_handler(uint gpio, uint32_t events)
 {
@@ -333,8 +363,10 @@ void vInterrupcaoBotao(void *pvParameters) {
             modo_noturno = !modo_noturno;
             if (modo_noturno) {
                 vTaskResume(xModoNoturno);
+                vTaskResume(xBeepNoturno);
                 
             } else {
+                vTaskSuspend(xBeepNoturno);
                 contador = 0;
                 gpio_put(led_pin_green, false);
                 gpio_put(led_pin_red, false);
@@ -357,7 +389,6 @@ void vInterrupcaoBotao(void *pvParameters) {
         vTaskDelay(pdMS_TO_TICKS(10)); 
     }
 }
-
 
 // Definição de uma função para inicializar o PWM no pino do buzzer
 void pwm_init_buzzer(uint pin, int frequency)
@@ -406,11 +437,11 @@ int main()
 
     gpio_init(BUZZER_A);
     gpio_set_dir(BUZZER_A, GPIO_OUT);
-    pwm_init_buzzer(BUZZER_A, 100);
+    pwm_init_buzzer(BUZZER_A, 1000);
 
     gpio_init(BUZZER_B);
     gpio_set_dir(BUZZER_B, GPIO_OUT);
-    pwm_init_buzzer(BUZZER_B, 150);
+    pwm_init_buzzer(BUZZER_B, 1000);
 
 
     xTaskCreate(vBlinkTask, "Tarefa do LED VERDE", 
@@ -425,8 +456,11 @@ int main()
         configMINIMAL_STACK_SIZE, NULL, 3, &xBeepVermelho);
     xTaskCreate(vMatrizTask, "Tarefa do Beep do farol vermelho", 
         configMINIMAL_STACK_SIZE, NULL, 3, &xMatrizTask);
+    xTaskCreate(vBeepNoturno, "Tarefa do Modo Noturno",
+        configMINIMAL_STACK_SIZE, NULL, 3, &xBeepNoturno);
     xTaskCreate(vModoNoturno, "Tarefa do Modo Noturno",
         configMINIMAL_STACK_SIZE, NULL, 4, &xModoNoturno);
+
     xTaskCreate(vInterrupcaoBotao, "Tarefa do Modo Noturno",
         configMINIMAL_STACK_SIZE, NULL, 5, NULL);
     vTaskStartScheduler();
