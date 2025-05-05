@@ -4,12 +4,16 @@
 #include <stdio.h>
 #include "hardware/pwm.h"
 #include "hardware/clocks.h"
+#include "pico/bootrom.h"
 
 
 #define led_pin_green 11
 #define led_pin_red 13
 #define BUZZER_A 21
 #define BUZZER_B 10
+#define botaoA 5
+#define botaoB 6
+
 
 void vBlinkTask()
 {
@@ -73,12 +77,20 @@ void vBeepVermelho(){
 }
 
 
-// Trecho para modo BOOTSEL com botão B
-#include "pico/bootrom.h"
-#define botaoB 6
+// Trecho para modo BOOTSEL com botão B e alter flag do modo com botão A
+volatile uint32_t last_time;
 void gpio_irq_handler(uint gpio, uint32_t events)
 {
-    reset_usb_boot(0, 0);
+    uint32_t current_time = to_us_since_boot(get_absolute_time());
+    if (current_time - last_time > 500000){
+        if (!gpio_get(botaoB)) {
+            last_time = current_time;
+            rom_reset_usb_boot(0, 0);
+        }
+        if (!gpio_get(botaoA)) {
+            last_time = current_time;
+        }
+    }   
 }
 
 // Definição de uma função para inicializar o PWM no pino do buzzer
@@ -106,6 +118,12 @@ int main()
     gpio_set_dir(botaoB, GPIO_IN);
     gpio_pull_up(botaoB);
     gpio_set_irq_enabled_with_callback(botaoB, GPIO_IRQ_EDGE_FALL,
+                                         true, &gpio_irq_handler);
+
+    gpio_init(botaoA);
+    gpio_set_dir(botaoA, GPIO_IN);
+    gpio_pull_up(botaoA);
+    gpio_set_irq_enabled_with_callback(botaoA, GPIO_IRQ_EDGE_FALL,
                                          true, &gpio_irq_handler);
     // Fim do trecho para modo BOOTSEL com botão B
 
