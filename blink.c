@@ -45,9 +45,11 @@ void vBlinkTask2()
 }
 
 void vBeepVerde(){
+    uint slice_num_a = pwm_gpio_to_slice_num(BUZZER_A);
     while (true){
         vTaskDelay(pdMS_TO_TICKS(2000));
-        pwm_set_gpio_level(BUZZER_B, 0); 
+        pwm_set_enabled(slice_num_a, true);  
+        pwm_set_gpio_level(BUZZER_A, 0); 
         pwm_set_gpio_level(BUZZER_A, 2048);
         vTaskDelay(pdMS_TO_TICKS(2000));
         pwm_set_gpio_level(BUZZER_A, 0); 
@@ -56,7 +58,9 @@ void vBeepVerde(){
 }
 
 void vBeepAmarelo(){
+    uint slice_num_b = pwm_gpio_to_slice_num(BUZZER_B);
     while (true){
+        pwm_set_enabled(slice_num_b, true);  
         pwm_set_gpio_level(BUZZER_B, 0); 
         vTaskDelay(pdMS_TO_TICKS(10000));
         pwm_set_gpio_level(BUZZER_B, 2048);
@@ -70,16 +74,17 @@ void vBeepAmarelo(){
 }
 
 void vBeepVermelho(){
+    uint slice_num_a = pwm_gpio_to_slice_num(BUZZER_A);
     while (true){
-
-        pwm_set_gpio_level(BUZZER_B, 0); 
+        pwm_set_enabled(slice_num_a, true);  
+        pwm_set_gpio_level(BUZZER_A, 0); 
         vTaskDelay(pdMS_TO_TICKS(20000));
         pwm_set_gpio_level(BUZZER_A, 2048);
         vTaskDelay(pdMS_TO_TICKS(2000));
         pwm_set_gpio_level(BUZZER_A, 0); 
         pwm_set_gpio_level(BUZZER_A, 2048);
         vTaskDelay(pdMS_TO_TICKS(2000));
-        pwm_set_gpio_level(BUZZER_B, 0); 
+        pwm_set_gpio_level(BUZZER_A, 0); 
         vTaskDelay(pdMS_TO_TICKS(6000));
     }
 }
