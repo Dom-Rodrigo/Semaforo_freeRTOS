@@ -3,18 +3,31 @@
 #include "task.h"
 #include <stdio.h>
 
-#define led_pin_red 12
+#define led_pin_green 11
+#define led_pin_blue 12
+#define led_pin_red 13
 
 void vBlinkTask()
 {
-    gpio_init(led_pin_red);
-    gpio_set_dir(led_pin_red, GPIO_OUT);
     while (true)
     {
+        gpio_put(led_pin_green, true);
+        vTaskDelay(pdMS_TO_TICKS(2000));
+        gpio_put(led_pin_green, false);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        printf("Blink\n");
+    }
+}
+
+void vBlinkTask2()
+{
+
+    while (true)
+    {
+        vTaskDelay(pdMS_TO_TICKS(1000));
         gpio_put(led_pin_red, true);
-        vTaskDelay(pdMS_TO_TICKS(200));
+        vTaskDelay(pdMS_TO_TICKS(2000));
         gpio_put(led_pin_red, false);
-        vTaskDelay(pdMS_TO_TICKS(200));
         printf("Blink\n");
     }
 }
@@ -38,8 +51,13 @@ int main()
     // Fim do trecho para modo BOOTSEL com botão B
 
     stdio_init_all();
-
+    gpio_init(led_pin_red);
+    gpio_init(led_pin_green);
+    gpio_set_dir(led_pin_red, GPIO_OUT);
+    gpio_set_dir(led_pin_green, GPIO_OUT);
     xTaskCreate(vBlinkTask, "Blink Task", 
+        configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
+    xTaskCreate(vBlinkTask2, "Blink Task 2", 
         configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
     vTaskStartScheduler();
     panic_unsupported();
