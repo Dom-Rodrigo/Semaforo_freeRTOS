@@ -205,50 +205,48 @@ void vBeepVerde(){
     uint slice_num_a = pwm_gpio_to_slice_num(BUZZER_A);
     while (true){
         vTaskDelay(pdMS_TO_TICKS(2000));
-        pwm_set_enabled(slice_num_a, true);  
-        pwm_set_gpio_level(BUZZER_A, 0); 
-        pwm_set_gpio_level(BUZZER_A, 2048);
-        vTaskDelay(pdMS_TO_TICKS(2000));
-        pwm_set_gpio_level(BUZZER_A, 0); 
-        vTaskDelay(pdMS_TO_TICKS(26000));
+            pwm_set_gpio_level(BUZZER_A, 0); 
+            pwm_set_gpio_level(BUZZER_A, 2048);
+            vTaskDelay(pdMS_TO_TICKS(2000));
+            pwm_set_gpio_level(BUZZER_A, 0); 
+            vTaskDelay(pdMS_TO_TICKS(26000));
     }
 }
 
 void vBeepAmarelo(){
     uint slice_num_b = pwm_gpio_to_slice_num(BUZZER_B);
     while (true){
-        pwm_set_enabled(slice_num_b, true);  
-        pwm_set_gpio_level(BUZZER_B, 0); 
-        vTaskDelay(pdMS_TO_TICKS(10000));
-        pwm_set_gpio_level(BUZZER_B, 2048);
-        vTaskDelay(pdMS_TO_TICKS(2000));
-        pwm_set_gpio_level(BUZZER_B, 0); 
-        pwm_set_gpio_level(BUZZER_B, 2048);
-        vTaskDelay(pdMS_TO_TICKS(2000));
-        pwm_set_gpio_level(BUZZER_B, 0); 
-        vTaskDelay(pdMS_TO_TICKS(16000));
-    }
+            pwm_set_gpio_level(BUZZER_B, 0); 
+            vTaskDelay(pdMS_TO_TICKS(10000));
+            pwm_set_gpio_level(BUZZER_B, 2048);
+            vTaskDelay(pdMS_TO_TICKS(2000));
+            pwm_set_gpio_level(BUZZER_B, 0); 
+            pwm_set_gpio_level(BUZZER_B, 2048);
+            vTaskDelay(pdMS_TO_TICKS(2000));
+            pwm_set_gpio_level(BUZZER_B, 0); 
+            vTaskDelay(pdMS_TO_TICKS(16000));
+
+        }
 }
 
 void vBeepVermelho(){
     uint slice_num_a = pwm_gpio_to_slice_num(BUZZER_A);
     while (true){
-        pwm_set_enabled(slice_num_a, true);  
-        pwm_set_gpio_level(BUZZER_A, 0); 
-        vTaskDelay(pdMS_TO_TICKS(20000));
-        pwm_set_gpio_level(BUZZER_A, 2048);
-        vTaskDelay(pdMS_TO_TICKS(2000));
-        pwm_set_gpio_level(BUZZER_A, 0); 
-        pwm_set_gpio_level(BUZZER_A, 2048);
-        vTaskDelay(pdMS_TO_TICKS(2000));
-        pwm_set_gpio_level(BUZZER_A, 0); 
-        vTaskDelay(pdMS_TO_TICKS(6000));
+            pwm_set_gpio_level(BUZZER_A, 0); 
+            vTaskDelay(pdMS_TO_TICKS(20000));
+            pwm_set_gpio_level(BUZZER_A, 2048);
+            vTaskDelay(pdMS_TO_TICKS(2000));
+            pwm_set_gpio_level(BUZZER_A, 0); 
+            pwm_set_gpio_level(BUZZER_A, 2048);
+            vTaskDelay(pdMS_TO_TICKS(2000));
+            pwm_set_gpio_level(BUZZER_A, 0); 
+            vTaskDelay(pdMS_TO_TICKS(6000));
     }
 }
 
+static int contador = 0;
 void vMatrizTask()
 {
-    int contador = 0;
     bool cor = true;
     while (true)
     {
@@ -275,6 +273,13 @@ void vModoNoturno(){
 
 
     while (true){
+        npClear();
+        npSetLED(2, 50, 50, 0);
+        npSetLED(12, 50, 50, 0);
+        npSetLED(17, 50, 50, 0);
+        npSetLED(22, 50, 50, 0);
+
+        npWrite();
         gpio_put(led_pin_green, true);
         gpio_put(led_pin_red, true);
         pwm_set_gpio_level(BUZZER_A, 0);  // Periféricos são independentes
@@ -328,19 +333,24 @@ void vInterrupcaoBotao(void *pvParameters) {
             modo_noturno = !modo_noturno;
             if (modo_noturno) {
                 vTaskResume(xModoNoturno);
+                
             } else {
+                contador = 0;
+                gpio_put(led_pin_green, false);
+                gpio_put(led_pin_red, false);
                 vTaskResume(xBlinkTask);
                 vTaskResume(xBlinkTask2);
                 vTaskResume(xBeepVerde);
                 vTaskResume(xBeepAmarelo);
                 vTaskResume(xBeepVermelho);
                 vTaskResume(xMatrizTask);
-                // gpio_put(led_pin_green, false);
-                // gpio_put(led_pin_red, false);
-                // uint slice_num_a = pwm_gpio_to_slice_num(BUZZER_A);
-                // uint slice_num_b = pwm_gpio_to_slice_num(BUZZER_B);
-                // pwm_set_enabled(slice_num_a, true);
-                // pwm_set_enabled(slice_num_b, true);
+                uint slice_num_a = pwm_gpio_to_slice_num(BUZZER_A);
+                uint slice_num_b = pwm_gpio_to_slice_num(BUZZER_B);
+                pwm_set_enabled(slice_num_a, true);
+                pwm_set_enabled(slice_num_b, true);
+                pwm_set_gpio_level(BUZZER_A, 0); 
+                pwm_set_gpio_level(BUZZER_A, 0); 
+
             }
         }
 
