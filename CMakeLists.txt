@@ -31,14 +31,18 @@ include_directories(${CMAKE_SOURCE_DIR}/lib)
 
 add_executable(${PROJECT_NAME}  
         blink.c 
+        lib/ssd1306.c
         )
 
 #target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR})
+pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/ws2818b.pio)
 
 target_link_libraries(${PROJECT_NAME} 
         pico_stdlib
         pico_bootrom
         hardware_pwm
+        hardware_pio
+        hardware_i2c
         FreeRTOS-Kernel         # Kernel do FreeRTOS
         FreeRTOS-Kernel-Heap4   # Gerenciador de memoria
         )
